@@ -1,0 +1,4 @@
+date created,invoice title,invoice number,invoice currency,reference id,customer name,customer email,customer id,invoice URL,status,date paid,item name,quantity,unit price,amount,discount,total invoice amount,paid by bank,stripe receipt,transaction hash,verification type,source,notes,next_invoice,last_invoice,active
+2023/01/25,coca cola,40,USD,,Eledi,edyrkaj@gmail.com,,https://gilded-dev.firebaseapp.com/invoices/share/ZeWHbUK7UAU8ywSRRDSR,unpaid,,coca cola,1,9,9,0,9,TRUE,,,automatic,invoice,,,,
+2023/01/25,cherry coke,41,USD,,coca cola,myrtezaera@gmail.com,,https://gilded-dev.firebaseapp.com/invoices/share/E70zBgV1npZs3gFwUY7u,unpaid,,cherry coke :),10,2.5,25,0,25,TRUE,,,automatic,invoice,,,,
+2023/01/25,cola,42,USDC,,coca cola,myrtezaera@gmail.com,,https://gilded-dev.firebaseapp.com/invoices/share/6gawfGTKFbuZZYaH9vmy,unpaid,,cherry,10,2,20,0,20,FALSE,FALSE,,automatic,invoice,,,,
