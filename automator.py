@@ -14,7 +14,10 @@ def create_package_json(npm_packages):
         },
         "author": "",
         "license": "ISC",
-        "dependencies": {}
+        "dependencies": {
+            "jest": "*",
+            "ts-jest": "*"
+        }
     }
 
     for package in npm_packages:

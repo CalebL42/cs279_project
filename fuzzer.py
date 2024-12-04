@@ -10,7 +10,7 @@ import sys
 
 client = OpenAI()
 PACKAGE_NAME = sys.argv[1]
-MAX_ITERS = 3
+MAX_ITERS = 1
 TIMESTAMP = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
 
 class VulnerableFunction(BaseModel):
@@ -80,8 +80,7 @@ def get_files_and_functions(client, readme_string, all_files_string):
         messages=[
             {
                 "role": "system",
-                "content": "You are an expert hacker with malicious intentions attempting to generate dirty user input that when passed into a "
-                + "sanitization function result in outputs that are still dirty and contain 'unsafe characters'."
+                "content": "You are an expert hacker with malicious intentions attempting to generate dirty user input that when passed into a sanitization function result in outputs that are still dirty and contain 'unsafe characters'. You will be given the files to use, but youu are only able to import using syntax from the README as if you were importing packages that have already been installed in an npm project."
             },
             {
                 "role": "user", 
@@ -90,8 +89,7 @@ def get_files_and_functions(client, readme_string, all_files_string):
                         + readme_string + "\n"
                         + "Here is a set of file paths and their contents from an npm package meant to sanitize/validate user input: " 
                         + all_files_string + "\n"
-                        + "Given these files, list the names of files that contain API's for directly sanitizing/validating user inputs "
-                        + "and from these files, list the function headers that actually conduct the sanitization/validation."
+                        + "Given these files, list the names of files that contain API's for directly sanitizing/validating user inputs"
             }
         ],
         response_format = VulnerableFunctionList
@@ -138,7 +136,7 @@ def critique(client, test_results, all_test_files_string):
         messages=[
             {
                 "role": "system",
-                "content": f"""You're a skeptic for evluating the effectivness of unit tests for catching sanitization errors examine each test case and the relevant source code. Here is the README file for the npm package: {readme_string}\n\n
+                "content": f"""You're a skeptic for evluating the effectivness of unit tests for catching sanitization errors examine each test case and the relevant source code. Remember that the packages should always be imported according to the syntax from the README file. It should only import packages as if they were already installed in the npm project. It should never import things from a specific file path. Here is the README file for the npm package: {readme_string}\n\n
                 Here is a set of file paths and their contents from an npm package meant to sanitize/validate user input: {full_file_string}"""
             },
             {
@@ -167,7 +165,7 @@ def generate_tests(client, readme_string, full_file_string, files_functions_resp
         messages=[
             {
                 "role": "system",
-                "content": "You are an expert hacker with malicious intentions attempting to generate dirty user input that when passed into a sanitization function result in outputs that are still dirty and contain 'unsafe characters'."
+                "content": "You are an expert hacker with malicious intentions attempting to generate dirty user input that when passed into a sanitization function result in outputs that are still dirty and contain 'unsafe characters'. You will be given the files to use, but youu are only able to import using syntax from the README as if you were importing packages that have already been installed in an npm project."
             },
             {
                 "role": "user", 
@@ -176,8 +174,7 @@ def generate_tests(client, readme_string, full_file_string, files_functions_resp
                         + readme_string + "\n"
                         + "Here is a set of file paths and their contents from an npm package meant to sanitize/validate user input: " 
                         + full_file_string + "\n"
-                        + "Given these files, list the names of files that contain API's for directly sanitizing/validating user inputs "
-                        + "and from these files, list the function headers that actually conduct the sanitization/validation."
+                        + "Given these files, list the names of files that contain API's for directly sanitizing/validating user inputs, so that you know how to analyze the internals of the codebase."
             },
             {
                 "role": "assistant", 
@@ -186,7 +183,7 @@ def generate_tests(client, readme_string, full_file_string, files_functions_resp
             {
                 "role": "user", 
                 "content": "I have attached the relevant files now, and you already know the relevant functions. "
-                    + "Now, for each of these functions, your task is to generate a Jest test harness and 3 adversarial inputs that exploit logical bugs in the sanitization function's source code. "
+                    + "Your task is to generate a Jest test harness and 3 adversarial inputs that exploit logical bugs in the sanitization function's source code. "
                     + "They should be dirty inputs that bypass the sanitization. "
                     + "Don't actually execute the task yet, for now I just want you to "
                     + "use <scratchpad> tags to outline your step-by-step methodology for analyzing the source code, generating the harness, and generating the test cases with the appropriate dirty inputs."
@@ -215,8 +212,7 @@ def generate_tests(client, readme_string, full_file_string, files_functions_resp
                         + readme_string + "\n"
                         + "Here is a set of file paths and their contents from an npm package meant to sanitize/validate user input: " 
                         + full_file_string + "\n"
-                        + "Given these files, list the names of files that contain API's for directly sanitizing/validating user inputs "
-                        + "and from these files, list the function headers that actually conduct the sanitization/validation"
+                        + "Given these files, list the names of files that contain API's for directly sanitizing/validating user inputs, so that you know how to analyze the internals of the codebase."
             },
             {
                 "role": "assistant", 
@@ -225,7 +221,7 @@ def generate_tests(client, readme_string, full_file_string, files_functions_resp
             {
                 "role": "user", 
                 "content": "I have attached the relevant files now, and you already know the relevant functions. "
-                    + "Now, for each of these functions, your task is to generate a Jest test harness and 3 adversarial inputs that exploit logical bugs in the sanitization function's source code. "
+                    + "Now generate a Jest test harness and 3 adversarial inputs that exploit logical bugs in the sanitization function's source code. "
                     + "They should be dirty inputs that bypass the sanitization. "
                     + "Don't actually execute the task yet, for now I just want you to "
                     + "use <scratchpad> tags to outline your step-by-step methodology for analyzing the source code, generating the harness, and generating the test cases with the appropriate dirty inputs."
@@ -244,11 +240,9 @@ def generate_tests(client, readme_string, full_file_string, files_functions_resp
                 "content": "Following the outline from your scratchpad, you will execute the intended task described earlier, which was: Generate a Jest test harness and 3 adversarial inputs that exploit bugs in the sanitization logic. "
                     + "They should mainly be inputs that bypass the sanitization. "
                     + ("" if (cm == "") else "Remember now that you have done this task before, so you need to keep in mind the critic's response to your old work to revise your output and make them happy.")
-                    + "As an example of how to create a basic Jest test harness and one test case, suppose we have this function defined in the file sum.js:\n"
-                    + "```js\nfunction sum(a, b) {\n\treturn a + b;\n}\nmodule.exports = sum;\n```\n"
-                    + "The start of the test file should handle the necessary imports and setup for the test cases, which looks something like this:\n"
-                    + "```js\nconst sum = require('sum.js');\n```\n"
-                    + "You don't need to require the absolute file path for the function to be tested, just the function name should suffice. Then all 3 test functions should be written. A single test function might look like this:\n"
+                    + "Here is a guide to how to create a basic Jest test harness and test cases."
+                    + "The start of the test file should handle the necessary imports and setup for the test cases according to the usage instructions in the README. You import packages as if they are already installed in node modules."
+                    + "Then all 3 test functions should be written. A single test function might look like this:\n"
                     + "```js\ntest('adds 1 + 2 to equal 3', () => {\n\texpect(sum(1, 2)).toBe(3);\n});\n```\n"
                     + "All of the test cases should use as input a dirty string that exploits a flaw in the source code, but the test should expect the theoretical desired result assuming the function works as intended."
                     + "Therefore, we want all the tests to fail, and they should fail in a way that indicates a security vulnerability."

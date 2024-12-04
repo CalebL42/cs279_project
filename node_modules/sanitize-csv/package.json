@@ -1,0 +1,34 @@
+{
+  "name": "sanitize-csv",
+  "version": "1.0.0",
+  "description": "Sanitize CSV data and prevent injections",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ESOFTSOLUTIONS/sanitize-csv.git"
+  },
+  "keywords": [
+    "sanitize",
+    "csv",
+    "prevent",
+    "injection",
+    "attacker",
+    "js",
+    "purify"
+  ],
+  "author": "Eledi Dyrkaj <edyrkaj@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ESOFTSOLUTIONS/sanitize-csv/issues"
+  },
+  "homepage": "https://github.com/ESOFTSOLUTIONS/sanitize-csv#readme",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0"
+  }
+}

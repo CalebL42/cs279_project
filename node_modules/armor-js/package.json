@@ -1,0 +1,66 @@
+{
+  "__header"            : [
+"// -*- coding: utf-8 -*-",
+"//-----------------------------------------------------------------------------",
+"// file: $Id$",
+"// auth: Philip J Grabner <phil@patient.ly>",
+"// date: 2014/08/23",
+"// copy: (C) Copyright 2017-EOT Patiently, Inc., All Rights Reserved.",
+"//-----------------------------------------------------------------------------"
+  ],
+
+  "name"                : "armor-js",
+  "description"         : "A data validation and sanitization module",
+  "keywords"            : [
+    "data",
+    "validation",
+    "form",
+    "user",
+    "transformation",
+    "serialization",
+    "de-serialization",
+    "encode",
+    "decode",
+    "armor",
+    "formencode",
+    "python",
+    "port"
+  ],
+  "version"             : "0.1.6",
+  "homepage"            : "https://github.com/patientlyhq/armor-js",
+  "author"              : "Philip J Grabner",
+  "contributors"        : [
+    "Philip J Grabner"
+  ],
+  "license"             : "GPLv3",
+  "main"                : "armor-js.js",
+  "repository"          : {
+    "type"                : "git",
+    "url"                 : "https://github.com/patientlyhq/armor-js.git"
+  },
+  "files"               : [
+    "README.md",
+    "LICENSE.txt",
+    "armor-js.js",
+    "armor-js-min.js",
+    "armor-js-min.map"
+  ],
+  "scripts"             : {
+    "test"                : "./node_modules/.bin/jasmine-node ./test",
+    "browser"             : "./node_modules/.bin/phantomjs test/run-jasmine.js test/jasmine.html",
+    "build"               : "./node_modules/.bin/uglifyjs armor-js.js --compress \"evaluate=false\" --preamble \"; // armor-js@${npm_package_version} (${npm_package_repository_url})\" --comments \"/ Copyright .*/\" --mangle --source-map armor-js-min.map --output armor-js-min.js",
+    "version"             : "echo ${npm_package_version}"
+  },
+  "devDependencies"     : {
+    "jasmine-node"        : "~1.14.3",
+    "phantomjs"           : "~1.9.7-5",
+    "uglify-js"           : "~2.4.13"
+  },
+
+  "__footer"              : [
+"//-----------------------------------------------------------------------------",
+"// end of $Id$",
+"// $ChangeLog$",
+"//-----------------------------------------------------------------------------"
+  ]
+}

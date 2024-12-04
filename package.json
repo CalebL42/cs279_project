@@ -9,10 +9,17 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "vue-sanitize-directive": "*",
-    "@locker/html-sanitizer": "*",
-    "ajv-sanitizer": "*",
-    "raml-sanitize": "*",
-    "@neuralegion/class-sanitizer": "*"
+    "@jdlien/validator-utils": "*",
+    "@ovotech/axios-logger": "*",
+    "armor-js": "*",
+    "awesomize": "*",
+    "chai": "^5.1.2",
+    "jest": "*",
+    "jstring": "*",
+    "sanitize-against": "*",
+    "sanitize-csv": "^1.0.0",
+    "ts-jest": "*",
+    "type-check": "^0.4.0",
+    "validator-as-promised": "*"
   }
 }
