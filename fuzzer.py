@@ -150,73 +150,7 @@ for test_suite in harness_parsed.test_suites:
 
 # name each test file after the file and function in which it exists
 
-
 #run Jest test harnesses automatically here, and examine the results manually:
 # subprocess.check_call('npm test', shell=True)
-
-# ### **5. Tips for Effective Prompts**
-# - **Provide Clear Context:** Explain the purpose of the function (e.g., "This function escapes HTML to prevent XSS attacks").
-# - **Include Edge Cases:** List specific scenarios (e.g., "null or undefined inputs").
-# - **Code Block Clarity:** Use proper formatting for function definitions (e.g., triple backticks with the `javascript` language tag).
-# - **Specify Output Requirements:** Mention the expected format for the generated test harness (e.g., Jest syntax).
-
-# ---
-
-# ### **6. Automating in Python**   (Optional)
-# If you’re using Python for dynamic prompts, you can combine your function definitions with the prompt template:
-
-# function combines inputs into prompt string
-# def create_prompt(function_code, test_cases):
-#     return f"""
-#     You are an assistant that generates test cases for the following function:
-
-#     ```javascript
-#     {function_code}
-#     ```
-
-#     Generate a Jest test harness for this function. Include the following test cases:
-#     {test_cases}
-#     """
-
-
-# function_code = """
-# function sanitizeInput(input) {
-#     return input.replace(/<script.*?>.*?<\/script>/gi, '');
-# }
-# """
-# # are we going to have agents to create these inputs?
-# test_cases = """
-# - Strings containing `<script>` tags.
-# - Strings without `<script>` tags.
-# - Empty strings.
-# - Strings with special characters.
-# """
-
-# gen_harness_prompt = create_prompt(function_code, test_cases)
-# print(gen_harness_prompt)  # Send this to ChatGPT via API
-
-# generate_harness = client.chat.completions.create(
-#     model="gpt-4o",
-#     messages=[
-#         {
-#             "role": "system", 
-#             "content": "We are generating a test suite harness for nodejs package libraries to test their sanitization functions"
-#                      + "Given these functions and example test cases, create a file that "
-#                      + "\n1. Executes the sanitization functions with the test cases."
-#                      + '\n2. Verifies if the sanitization logic handles common vulnerabilities such as XSS, SQL injection, etc. And does what the programmer or library intended it for based on the included past context'
-#                      + '\n3. Outputs a test result for each case, stating whether the sanitization passed or failed'
-#         },
-#         {
-#             "role": "assistant", 
-#             "content": completion_harness.choices[0].message
-#         },
-#         {
-#             "role": "user",
-#             "content": gen_harness_prompt
-        
-#         }
-#     ]
-# )
-
 
 # print(generate_harness.choices[0].message)

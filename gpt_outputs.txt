@@ -1,0 +1,56 @@
+completion_select:{
+    "functions": [
+        {
+            "file_name": "node_modules/sanitize-csv/index.js",
+            "function_name": "function sanitizeValues(csvData)"
+        }
+    ]
+}
+
+completion_harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "node_modules/sanitize-csv/index.js",
+                "function_name": "function sanitizeValues(csvData)"
+            },
+            "jest_test_file_headers": [
+                "const { sanitizeValues } = require('../node_modules/sanitize-csv/index.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('sanitize \"=@\" to \"\\'=@\\'\"', () => {\n    expect(sanitizeValues('=@', {delimiter: ',', quotes: '\"'})).toBe(\"'=@'\");\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize \"=@value\" to \"\\'=@value\\'\"', () => {\n    expect(sanitizeValues('=@value', {delimiter: ',', quotes: '\"'})).toBe(\"'=@value'\");\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize \",=@value\" to \",\\'=@value\\'\"', () => {\n    expect(sanitizeValues(',=@value', {delimiter: ',', quotes: '\"'})).toBe(\",='@value'\");\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize \"-value\" to \"\\'-value\\'\"', () => {\n    expect(sanitizeValues('-value', {delimiter: ',', quotes: '\"'})).toBe(\"'-value'\");\n});"
+                },
+                {
+                    "signature_and_body": "test('failed to sanitize if delimiter not correct', () => {\n    // An incorrect delimiter can be passed to exploit sanitization logic\n    expect(sanitizeValues('=cmd', {delimiter: ';', quotes: '\"'})).not.toBe(\"'=cmd'\");\n});"
+                },
+                {
+                    "signature_and_body": "test('failed to sanitize input with tab', () => {\n    expect(sanitizeValues('=\\tvalue', {delimiter: ',', quotes: '\"'})).toBe(\"'=\\tvalue'\");\n}); // test may fail if \\t is not correctly converted"
+                },
+                {
+                    "signature_and_body": "test('attempt injection with quoted input', () => {\n    expect(sanitizeValues('\"@value\"', {delimiter: ',', quotes: '\"'})).toBe(\"'@value'\");\n});"
+                },
+                {
+                    "signature_and_body": "test('attempt injection with carriage return in input', () => {\n    expect(sanitizeValues('=\\rvalue', {delimiter: ',', quotes: '\"'})).toBe(\"'=\\rvalue'\");\n}); // test may fail if \\r is not converted"
+                },
+                {
+                    "signature_and_body": "test('ensure leading zero is not sanitized', () => {\n    expect(sanitizeValues('0value', {delimiter: ',', quotes: '\"'})).toBe(\"0value\");\n}); // zero should not be sanitized"
+                },
+                {
+                    "signature_and_body": "test('check for non-special first character', () => {\n    expect(sanitizeValues('value', {delimiter: ',', quotes: '\"'})).toBe(\"value\");\n});"
+                }
+            ]
+        }
+    ]
+}
+
+------------
