@@ -1,9 +1,18 @@
 {
-  "dependencies": {
-    "jest": "^29.7.0",
-    "sanitize-csv": "^1.0.0"
-  },
+  "name": "my_project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "scripts": {
     "test": "jest"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "vue-sanitize-directive": "*",
+    "@locker/html-sanitizer": "*",
+    "ajv-sanitizer": "*",
+    "raml-sanitize": "*",
+    "@neuralegion/class-sanitizer": "*"
   }
 }

@@ -54,3 +54,1817 @@ completion_harness:{
 }
 
 ------------
+completion_select:{
+    "functions": [
+        {
+            "file_name": "node_modules/sanitize-csv/index.js",
+            "function_name": "sanitizeValues(csvData)"
+        }
+    ]
+}
+
+completion_scratchpad:<scratchpad>
+### Step-by-Step Methodology for Analyzing the Source Code
+
+1. **Understand the Purpose and Logic:**
+   - The function `sanitizeValues` is designed to sanitize CSV data by handling specific special characters (`=`, `+`, `-`, `@`, `0x09`, `0x0D`) at the beginning of CSV fields.
+   - Given that sanitization is done by escaping these characters or replacing them with a quoted version, identify potential logical flaws in this approach.
+
+2. **Identify Logical Bugs:**
+   - Check the effectiveness of the replacement logic: The code uses escape and then manual replacement, which might allow certain bypasses if not done properly.
+   - Examine the handling of multiple occurrences: Ensure that only the first character is conditioned on, leaving subsequent instances of special characters unhandled.
+   - Review the handling of input edge cases: Consider empty strings, strings without special characters, or strings where special characters are not the first character.
+
+3. **Sketch the Jest Test Harness:**
+   - Import necessary modules from Jest.
+   - Import `sanitizeValues` from the file.
+   - Define a suite of test cases to check both valid and adversarial inputs.
+   - Ensure tests cover both expected behavior and vulnerabilities.
+
+4. **Generate Adversarial Inputs:**
+   - Inputs with special characters not at the start, bypassing initial checks.
+   - Inputs with escaped characters that reverse or cancel out modifications.
+   - Inputs that use different field separator and quotes.
+   - Payload injection techniques (e.g., using double quotes to confuse).
+   - Combination of special characters and regular text to create complex scenarios.
+   - Inputs that exploit undefined behaviors (e.g., only separators, empty strings).
+
+5. **Implement Test Assertions:**
+   - For each input, verify if the output contains any unsafe characters originally intended to be sanitized.
+   - Write assertions that check the output against expected sanitized versions.
+
+### Example Sketch of Jest Test Harness
+```javascript
+const { sanitizeValues } = require('sanitize-csv');
+const args = { delimiter: ',', quotes: '"' };
+
+describe('sanitizeValues function', () => {
+  test('should correctly sanitize input with initial =', () => {
+    expect(sanitizeValues('=SUM(A1:A2)', args)).not.toContain('=');
+  });
+  
+  // More tests to be added with adversarial examples
+});
+```
+
+### Example Adversarial Inputs:
+1. `=SUM(A1:A2)`
+2. `+CMD|' /C calc'!A0`
+3. `0x09Text`
+4. `-Passthrough`
+5. `@ProvidesImport`
+6. `Hello=World`
+7. `<script>alert('x')</script>`
+8. `"+"System("/bin/sh")"`
+9. `NormalText,=SUM(A1:A2)`
+10. `=CONCATENATE("Hello,", "World")`
+</scratchpad>
+
+completion_harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "node_modules/sanitize-csv/index.js",
+                "function_name": "sanitizeValues(csvData)"
+            },
+            "jest_test_file_headers": [
+                "const { sanitizeValues } = require('sanitize-csv');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('sanitize should escape leading =', () => {\n    const args = { delimiter: ',', quotes: '\"' };\n    expect(sanitizeValues('=SUM(A1:A2)', args)).toBe('\\'=SUM(A1:A2)');\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize should escape leading +', () => {\n    const args = { delimiter: ',', quotes: '\"' };\n    expect(sanitizeValues('+CMD|\\' /C calc\\'!A0', args)).toBe('\\'+CMD|\\' /C calc\\'!A0');\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize should escape tab character', () => {\n    const args = { delimiter: ',', quotes: '\"' };\n    expect(sanitizeValues('\\tText', args)).toBe('\\\\tText');\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize should escape leading -', () => {\n    const args = { delimiter: ',', quotes: '\"' };\n    expect(sanitizeValues('-Passthrough', args)).toBe('\\'-Passthrough');\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize should escape leading @', () => {\n    const args = { delimiter: ',', quotes: '\"' };\n    expect(sanitizeValues('@ProvidesImport', args)).toBe('\\'@ProvidesImport');\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize should handle regular text with embedded =', () => {\n    const args = { delimiter: ',', quotes: '\"' };\n    expect(sanitizeValues('Hello=World', args)).toBe('Hello=World');\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize should not allow HTML tags', () => {\n    const args = { delimiter: ',', quotes: '\"' };\n    expect(sanitizeValues('<script>alert(\\'x\\')</script>', args)).not.toContain('<script>');\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize should handle injection attempts', () => {\n    const args = { delimiter: ',', quotes: '\"' };\n    expect(sanitizeValues('\"+\"System(\\\"/bin/sh\\\")\"', args)).not.toContain('+');\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize should sanitize concatenated expressions', () => {\n    const args = { delimiter: ',', quotes: '\"' };\n    expect(sanitizeValues('=CONCATENATE(\"Hello,\", \"World\")', args)).toBe('\\'=CONCATENATE(\"Hello,\", \"World\")');\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize should not allow commands after regular text', () => {\n    const args = { delimiter: ',', quotes: '\"' };\n    expect(sanitizeValues('NormalText,=SUM(A1:A2)', args)).toBe('NormalText,\\'=SUM(A1:A2)');\n});"
+                }
+            ]
+        }
+    ]
+}
+
+------------
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "node_modules/sanitize-csv/index.js",
+            "function_name": "function sanitizeValues(csvData)"
+        }
+    ]
+}
+
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "node_modules/sanitize-csv/index.js",
+            "function_name": "sanitizeValues"
+        }
+    ]
+}
+
+scratchpad thoughts before making harness:<scratchpad>
+Step 1: Analyze the Source Code
+- Review the `sanitizeValues` function in `node_modules/sanitize-csv/index.js`.
+- Identify how the function attempts to sanitize CSV inputs by examining its logic.
+  - Understand how it checks for special characters at the beginning of each CSV field.
+  - Check the escape mechanism using lodash `escape` and replacement logic.
+  - Review any logical inconsistencies in the `validateArgs` function.
+  
+Step 2: Identify Logical Flaws
+- Check if there are special characters or cases that can bypass sanitization:
+  - Evaluate how delimiters and quotes are being set and used.
+  - Consider edge cases where the first character might not be detected properly due to incorrect splitting or if other characters are missed.
+  - Consider input that combines multiple special characters.
+  - Investigate potential issues with escape sequences from lodash `escape`.
+  
+Step 3: Generate Jest Test Harness
+- Set up a Jest test file for `sanitize-csv`.
+- Import the `sanitizeValues` function.
+- Create a series of test cases using Jest's `test` or `it` functions.
+
+Step 4: Generate Adversarial Inputs
+- Create 10 dirty inputs designed to exploit any logical bugs identified:
+  1. Inputs with multiple special characters at different positions.
+  2. Inputs that include properly escaped sequences which may not be handled by the sanitizer's logic.
+  3. Inputs that manipulate the expected CSV structure (e.g., missing fields, extra delimiters).
+  4. Inputs that abuse not well-sanitized arguments like delimiter and quotes.
+  5. Inputs utilizing special characters encoded in different forms.
+  6. Strings that appear benign but contain invisible control characters.
+  7. Inputs with newline characters that may cause issues in line parsing.
+  8. Inputs with nested or recursive escape sequences.
+  9. Inputs using characters that exploit lodash escape flaws (if any).
+  10. Inputs that make use of JSON syntax or similar expressions within CSV values that could be missed.
+
+Step 5: Execute and Evaluate
+- Run the test harness using Jest.
+- Assert the sanitization function output and compare it with the expected 'sanitized' output to observe any issues where dirty inputs remain dirty.
+- Log results to analyze and refine the adversarial test cases if needed.
+</scratchpad>
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "node_modules/sanitize-csv/index.js",
+                "function_name": "sanitizeValues"
+            },
+            "jest_test_file_headers": [
+                "const { sanitizeValues } = require('sanitize-csv');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('Test case 1: bypass with leading `=` directly followed by `escaped`', () => {\n    const input = '=concatenate(\"safe\", \"unsafe\")';\n    const result = sanitizeValues(input, { delimiter: ',', quotes: '\"' });\n    expect(result).not.toBe(input);\n});"
+                },
+                {
+                    "signature_and_body": "test('Test case 2: leading `+` should be escaped but passes through', () => {\n    const input = '+1-800-555-0199';\n    const result = sanitizeValues(input, { delimiter: ',', quotes: '\"' });\n    expect(result).not.toBe(input);\n});"
+                },
+                {
+                    "signature_and_body": "test('Test case 3: CSV formula with `=` followed by nested quotes', () => {\n    const input = '=cmd|`\"safe;\"`calc.exe';\n    const result = sanitizeValues(input, { delimiter: ',', quotes: '\"' });\n    expect(result).not.toBe(input);\n});"
+                },
+                {
+                    "signature_and_body": "test('Test case 4: Special character `-` should be escaped but remains unaltered', () => {\n    const input = '-\"quoted-field\"';\n    const result = sanitizeValues(input, { delimiter: ',', quotes: '\"' });\n    expect(result).not.toBe(input);\n});"
+                },
+                {
+                    "signature_and_body": "test('Test case 5: mixed special characters sequence remains dirty', () => {\n    const input = '=-\"`+1-800\"';\n    const result = sanitizeValues(input, { delimiter: ',', quotes: '\"' });\n    expect(result).not.toBe(input);\n});"
+                },
+                {
+                    "signature_and_body": "test('Test case 6: using escape sequence that looks clean', () => {\n    const input = '0x09notreallyclean';\n    const result = sanitizeValues(input, { delimiter: ',', quotes: '\"' });\n    expect(result).not.toBe(input);\n});"
+                },
+                {
+                    "signature_and_body": "test('Test case 7: quirk with `0x0D` not filtered correctly', () => {\n    const input = '0x0Dmislead';\n    const result = sanitizeValues(input, { delimiter: ',', quotes: '\"' });\n    expect(result).not.toBe(input);\n});"
+                },
+                {
+                    "signature_and_body": "test('Test case 8: Simulated code execution attempt still dirty', () => {\n    const input = '=@eval(calc.exe)';\n    const result = sanitizeValues(input, { delimiter: ',', quotes: '\"' });\n    expect(result).not.toBe(input);\n});"
+                },
+                {
+                    "signature_and_body": "test('Test case 9: Code injection via JSON-like structure', () => {\n    const input = '=\"{\"user\":\"guest\",\"status\":\"admin\"}\"';\n    const result = sanitizeValues(input, { delimiter: ',', quotes: '\"' });\n    expect(result).not.toBe(input);\n});"
+                },
+                {
+                    "signature_and_body": "test('Test case 10: hidden tab character leading to issue', () => {\n    const input = '0x09dataStart';\n    const result = sanitizeValues(input, { delimiter: ',', quotes: '\"' });\n    expect(result).not.toBe(input);\n});"
+                }
+            ]
+        }
+    ]
+}
+
+------------
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "node_modules/sanitize-csv/index.js",
+            "function_name": "sanitizeValues(csvData)"
+        }
+    ]
+}
+
+scratchpad thoughts before making harness:<scratchpad>
+Step-by-Step Methodology:
+
+1. **Analyze the Source Code:**
+   - Review the `sanitizeValues` function to understand its logic.
+   - Identify how it processes the input string and which conditions it checks for special characters.
+   - Note that it attempts to detect and escape specific special characters if they appear as the first character of a data segment.
+   - Understand how the lodash `escape` function impacts the sanitization process.
+   - Check if it correctly modifies the `fieldSeperator` and `quotes` based on the arguments.
+
+2. **Identify Logical Bugs:**
+   - Determine if the escape sequence or replacement logic can be bypassed by certain types of input.
+   - Check if the encoding/escaping processes are inadequate for handling special characters mid-string or if the use of escape is incorrect.
+   - Investigate if the replacement logic can introduce vulnerabilities, such as incomplete character replacement or allowing bypass of the intended escape mechanism.
+
+3. **Generate Jest Test Harness:**
+   - Set up a Jest environment for test creation.
+   - Create a Jest test suite to test the `sanitizeValues` function.
+   - Import the required modules and functions.
+   - Define a series of test cases using the `test()` function in Jest. Each test should call `sanitizeValues` with different inputs and check if the result is sanitized properly.
+
+4. **Create Adversarial Test Inputs:**
+
+   - **Input with Nested Quotes:**
+     Input: `'",=Formula!'`
+     Logic: Check if nested quotes bypass the initial character check.
+
+   - **Mixed Separator Characters:**
+     Input: `'1,=Formula,2'`
+     Logic: Verify if the function mixes field separators with special characters properly.
+
+   - **Multiple Encoded Characters:**
+     Input: `'\\0x09=Inject'`
+     Logic: Check how multiple encoded characters impact sanitization.
+
+   - **Leading Safe Character with Special:**
+     Input: `'A=Dangerous'`
+     Logic: Test if a safe leading character followed by a special one bypasses checks.
+
+   - **Carriage Return/Newline Injection:**
+     Input: `'Hello\r-World'`
+     Logic: Determine if newline or carriage return bypasses sanitization.
+
+   - **Double Escape Characters:**
+     Input: `'\\\\=StillDanger'`
+     Logic: Inspect if double backslashes affect escaping.
+
+   - **Unicode Special Characters:**
+     Input: `'\u003DUnicodeInject'`
+     Logic: Use Unicode to input special characters in escape bypass test.
+
+   - **Complex Script Injection String:**
+     Input: `'"=2+3'!@'`
+     Logic: Compound expressions with juxtaposed special characters.
+
+   - **Invisible Separator Manipulation:**
+     Input: `'0x090x0DHiddenAttack'`
+     Logic: Use invisible characters to bypass visible checks.
+
+   - **SQL-Injection-like Input:**
+     Input: `,'" OR 1=1 --'`
+     Logic: Test if SQL-like logic or comments can bypass CSV sanitization.
+
+5. **Validate Test Results:**
+   - Ensure test outputs confirm the input passes through sanitization improperly.
+   - Document any successful bypasses as potential vulnerabilities for further scrutiny and fixes.
+
+By following this methodology, we systematically uncover flaws in the `sanitizeValues` function and craft inputs that potentially bypass the intended sanitization, thus exposing security vulnerabilities.
+</scratchpad>
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "node_modules/sanitize-csv/index.js",
+                "function_name": "sanitizeValues(csvData)"
+            },
+            "jest_test_file_headers": [
+                "const { sanitizeValues } = require('sanitize-csv');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('Nested quotes test (\"=Formula!\")', () => {\n  const input = '\"=Formula!\"';\n  const { fieldSeperator, quotes } = { delimiter: ',', quotes: '\"' };\n  const result = `\"'=Formula!'\"`;\n  expect(sanitizeValues(input, { delimiter: ',', quotes: '\"' })).toBe(result);\n});"
+                },
+                {
+                    "signature_and_body": "test('Mixed separator and special characters (1,=Formula,2)', () => {\n  const input = '1,=Formula,2';\n  const result = '1,\"'=Formula'\",2';\n  expect(sanitizeValues(input, { delimiter: ',', quotes: '\"' })).toBe(result);\n});"
+                },
+                {
+                    "signature_and_body": "test('Multiple encoded characters (\\\\0x09=Inject)', () => {\n  const input = '\\\\0x09=Inject';\n  const result = '\\'\\\\0x09'=Inject';\n  expect(sanitizeValues(input, { delimiter: ',', quotes: '\"' })).toBe(result);\n});"
+                },
+                {
+                    "signature_and_body": "test('Leading safe character with special (A=Dangerous)', () => {\n  const input = 'A=Dangerous';\n  const result = 'A\\\"'=Dangerous';\n  expect(sanitizeValues(input, { delimiter: ',', quotes: '\"' })).toBe(result);\n});"
+                },
+                {
+                    "signature_and_body": "test('Carriage return injection (Hello\\r-World)', () => {\n  const input = 'Hello\\r-World';\n  const result = 'Hello\"'=World\"';\n  expect(sanitizeValues(input, { delimiter: ',', quotes: '\"' })).toBe(result);\n});"
+                },
+                {
+                    "signature_and_body": "test('Double escape characters (\\\\\\\\=StillDanger)', () => {\n  const input = '\\\\\\\\=StillDanger';\n  const result = '\\\"\\\\'='StillDanger\"';\n  expect(sanitizeValues(input, { delimiter: ',', quotes: '\"' })).toBe(result);\n});"
+                },
+                {
+                    "signature_and_body": "test('Unicode special characters (\\u003DUnicodeInject)', () => {\n  const input = '\\u003DUnicodeInject';\n  const result = '\\'=UnicodeInject\"';\n  expect(sanitizeValues(input, { delimiter: ',', quotes: '\"' })).toBe(result);\n});"
+                },
+                {
+                    "signature_and_body": "test('Complex script injection (\"=2+3'!@')', () => {\n  const input = '\"=2+3'!@';\n  const result = '\"''=2+3'!@';\n  expect(sanitizeValues(input, { delimiter: ',', quotes: '\"' })).toBe(result);\n});"
+                },
+                {
+                    "signature_and_body": "test('Invisible separator manipulation (0x090x0DHiddenAttack)', () => {\n  const input = '0x090x0DHiddenAttack';\n  const result = '\\'0x09\"0x0D'HiddenAttack\"';\n  expect(sanitizeValues(input, { delimiter: ',', quotes: '\"' })).toBe(result);\n});"
+                },
+                {
+                    "signature_and_body": "test('SQL-like logic injection (,\" OR 1=1 --)', () => {\n  const input = ',\" OR 1=1 --';\n  const result = ',\\''\" OR 1=1 --';\n  expect(sanitizeValues(input, { delimiter: ',', quotes: '\"' })).toBe(result);\n});"
+                }
+            ]
+        }
+    ]
+}
+
+------------
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "node_modules/sanitize-csv/index.js",
+            "function_name": "function sanitizeValues(csvData)"
+        }
+    ]
+}
+
+scratchpad thoughts before making harness:<scratchpad>
+To create a test harness and generate adversarial test cases for the `sanitizeValues` function, follow these steps:
+
+1. **Analyze the Source Code:**
+   - Identify the vulnerabilities by inspecting the logic used within `sanitizeValues`.
+   - Note that the function targets specific characters at the start of the string (`=`, `+`, `-`, `@`, `0x09`, `0x0D`).
+   - Understand how lodash's `escape` function works and ensure it properly escapes known vulnerable characters.
+
+2. **Logic Flaws to Exploit:**
+   - The function only sanitizes characters if they are the first character of the string. If the dangerous character appears elsewhere, it won't be sanitized.
+   - The replacement logic adds an extra quote around the first character which may not be sufficient if the quotes or separators are wrongly handled later in CSV parsing.
+   - The `validateArgs` function expects `delimiter` and `quotes` parameters, which can be manipulated to inject unsanitized equivalents.
+
+3. **Generating the Jest Test Harness:**
+   - Import the `sanitizeValues` function.
+   - Set up Jest describe and test blocks.
+   - Mock or define the `delimiter` and `quotes` input arguments needed for the call.
+
+4. **Creating Test Cases:**
+   - Prepare adversarial inputs with the primary goal of ensuring injected characters don't appear as the first character, yet still manage to enter unsanitized content.
+   - Edge cases should also consider the `delimiter` and `quotes` impacts on the sanitization process.
+
+5. **Generating Dirty Inputs:**
+   - Example inputs:
+     - `"normal,=SUM(A1:B1),normal"`: Here `=SUM()` shouldn't be converted correctly due to non-first position.
+     - `"test,+A1:B1,inject"`: `+A1:B1` should escape but test on second position.
+     - `"random,@cmd,exec"`: Again tests @cmd at non-sanitizing positions.
+     - `"tab\tvalue,exp"`: Use of tab outside special position.
+     - `"carriage\rreturn,exp"`: Carriage return not at start.
+     - `"escaped\"quote,test"`: Embedded quote, play with quote escapement.
+     - `"semicolon;inject,test"`: Test for non-standard CSV separators like semicolon.
+     - `"=-cmd,valid,invalid"`: Ensure this doesn't bypass due to leading equals.
+     - `"adjacent,special,-@chars"`: Tests complex adjacency.
+     - `"leading space, =unseen"`: Space prefix misdirection.
+
+6. **Implementing the Jest Test:**
+   - Construct strings as described and assert on expected unsafe results post-sanitization.
+
+7. **Conclusion:**
+   - Use tests to assert weaknesses and iterate on further input generation based on weak sanitization points.
+</scratchpad>
+
+ By laying out the above plan, you can construct your test harness around these flaws and create test cases to better understand and identify weaknesses within the `sanitizeValues` implementation.
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "node_modules/sanitize-csv/index.js",
+                "function_name": "function sanitizeValues(csvData)"
+            },
+            "jest_test_file_headers": [
+                "const { sanitizeValues } = require('../node_modules/sanitize-csv');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('sanitizes inputs starting with equals in the middle of string', () => {\n    const result = sanitizeValues('normal,=SUM(A1:B1),normal', { delimiter: ',', quotes: '\"' });\n    expect(result).not.toContain('=SUM(A1:B1)'); // Should escape or sanitize\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitizes inputs starting with plus in the middle of string', () => {\n    const result = sanitizeValues('test,+A1:B1,inject', { delimiter: ',', quotes: '\"' });\n    expect(result).not.toContain('+A1:B1');\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitizes inputs with @ symbol in middle of string', () => {\n    const result = sanitizeValues('random,@cmd,exec', { delimiter: ',', quotes: '\"' });\n    expect(result).not.toContain('@cmd');\n});"
+                },
+                {
+                    "signature_and_body": "test('detects placeholder tab character not escaped', () => {\n    const result = sanitizeValues('tab\\tvalue,exp', { delimiter: ',', quotes: '\"' });\n    expect(result).not.toContain('tab\\tvalue');\n});"
+                },
+                {
+                    "signature_and_body": "test('detects placeholder carriage return character exposure', () => {\n    const result = sanitizeValues('carriage\\rreturn,exp', { delimiter: ',', quotes: '\"' });\n    expect(result).not.toContain('carriage\\rreturn');\n});"
+                },
+                {
+                    "signature_and_body": "test('escaped quote manipulation inside CSV', () => {\n    const result = sanitizeValues('escaped\"quote,test', { delimiter: ',', quotes: '\"' });\n    expect(result).not.toContain('escaped\"quote');\n});"
+                },
+                {
+                    "signature_and_body": "test('semicolon injection bypasses sanitization', () => {\n    const result = sanitizeValues('semicolon;inject,test', { delimiter: ',', quotes: '\"' });\n    expect(result).not.toContain('semicolon;inject');\n});"
+                },
+                {
+                    "signature_and_body": "test('equals prefixed command should be sanitized', () => {\n    const result = sanitizeValues('=-cmd,valid,invalid', { delimiter: ',', quotes: '\"' });\n    expect(result).not.toContain('=-cmd');\n});"
+                },
+                {
+                    "signature_and_body": "test('adjacent at and minus special character bypass', () => {\n    const result = sanitizeValues('adjacent,special,-@chars', { delimiter: ',', quotes: '\"' });\n    expect(result).not.toContain('-@chars');\n});"
+                },
+                {
+                    "signature_and_body": "test('leading space causing unseen equals sanitation attempt', () => {\n    const result = sanitizeValues('leading space, =unseen', { delimiter: ',', quotes: '\"' });\n    expect(result).not.toContain('=unseen');\n});"
+                }
+            ]
+        }
+    ]
+}
+
+------------
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "node_modules/sanitize-csv/index.js",
+            "function_name": "sanitizeValues"
+        }
+    ]
+}
+
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "node_modules/sanitize-csv/index.js",
+            "function_name": "sanitizeValues(csvData)"
+        }
+    ]
+}
+
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "node_modules/sanitize-csv/index.js",
+            "function_name": "function sanitizeValues(csvData)"
+        }
+    ]
+}
+
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "node_modules/sanitize-csv/index.js",
+            "function_name": "sanitizeValues"
+        }
+    ]
+}
+
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "node_modules/sanitize-csv/index.js",
+            "function_name": "function sanitizeValues(csvData)"
+        }
+    ]
+}
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "node_modules/sanitize-csv/index.js",
+                "function_name": "function sanitizeValues(csvData)"
+            },
+            "jest_test_file_headers": [
+                "const { sanitizeValues } = require('../node_modules/sanitize-csv/index.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('Handles =Header,value1 correctly', () => {\n    const dirtyInput = '=Header,value1';\n    const expectedOutput = \"'=Header',value1\";\n    expect(sanitizeValues(dirtyInput, { delimiter: ',', quotes: '\"' })).toBe(expectedOutput);\n  });"
+                },
+                {
+                    "signature_and_body": "test('Handles value1,=SUM(A1) correctly', () => {\n    const dirtyInput = 'value1,=SUM(A1)';\n    const expectedOutput = \"value1,'=SUM(A1)'\";\n    expect(sanitizeValues(dirtyInput, { delimiter: ',', quotes: '\"' })).toBe(expectedOutput);\n  });"
+                },
+                {
+                    "signature_and_body": "test('Handles email@example.com,@recipient correctly', () => {\n    const dirtyInput = 'email@example.com,@recipient';\n    const expectedOutput = \"email@example.com,'@recipient'\";\n    expect(sanitizeValues(dirtyInput, { delimiter: ',', quotes: '\"' })).toBe(expectedOutput);\n  });"
+                },
+                {
+                    "signature_and_body": "test('Handles text,+ADw-SCRIPT+AD4- correctly', () => {\n    const dirtyInput = 'text,+ADw-SCRIPT+AD4-';\n    const expectedOutput = \"text,'+ADw-SCRIPT+AD4-'\";\n    expect(sanitizeValues(dirtyInput, { delimiter: ',', quotes: '\"' })).toBe(expectedOutput);\n  });"
+                },
+                {
+                    "signature_and_body": "test('Handles \\tvalue1 correctly', () => {\n    const dirtyInput = '\\tvalue1';\n    const expectedOutput = \"'\\t'value1\";\n    expect(sanitizeValues(dirtyInput, { delimiter: ',', quotes: '\"' })).toBe(expectedOutput);\n  });"
+                },
+                {
+                    "signature_and_body": "test('Handles -42,123 correctly', () => {\n    const dirtyInput = '-42,123';\n    const expectedOutput = \"'-42',123\";\n    expect(sanitizeValues(dirtyInput, { delimiter: ',', quotes: '\"' })).toBe(expectedOutput);\n  });"
+                },
+                {
+                    "signature_and_body": "test('Handles value1,0x0A value correctly', () => {\n    const dirtyInput = 'value1,0x0A value';\n    const expectedOutput = \"value1,'0x0A' value\";\n    expect(sanitizeValues(dirtyInput, { delimiter: ',', quotes: '\"' })).toBe(expectedOutput);\n  });"
+                },
+                {
+                    "signature_and_body": "test('Handles \\\"=2+2\\\" wrapped as string correctly', () => {\n    const dirtyInput = '\\\"=2+2\\\"';\n    const expectedOutput = \"'\\\"=2+2\\\"'\";\n    expect(sanitizeValues(dirtyInput, { delimiter: ',', quotes: '\"' })).toBe(expectedOutput);\n  });"
+                },
+                {
+                    "signature_and_body": "test('Handles \\\",' + '-1' + '\\\", evidence of bad handling of quotes correctly', () => {\n    const dirtyInput = '\\\"' + '-1' + '\\\"';\n    const expectedOutput = \"'\\\"' + '-1' + '\\\"'\";\n    expect(sanitizeValues(dirtyInput, { delimiter: ',', quotes: '\"' })).toBe(expectedOutput);\n  });"
+                },
+                {
+                    "signature_and_body": "test('Handles newline\\rvalue correctly', () => {\n    const dirtyInput = 'newline\\rvalue';\n    const expectedOutput = \"'newline\\r'value\";\n    expect(sanitizeValues(dirtyInput, { delimiter: ',', quotes: '\"' })).toBe(expectedOutput);\n  });"
+                }
+            ]
+        }
+    ]
+}
+
+------------
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/index.js",
+            "function_name": "ajvSanitizer(ajv, extraSanitizers)"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const boolean = (data)"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const date = (data)"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const email = (data)"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const float = (data)"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const int = (data)"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const text = (data)"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "exports.boolean"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "exports.date"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "exports.email"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "exports.float"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "exports.int"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "exports.number"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "exports.text"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "exports.trim"
+        }
+    ]
+}
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "const boolean = (data)"
+            },
+            "jest_test_file_headers": [
+                "const { boolean } = require('<package_dir>/lib/sanitizers.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('Boolean sanitizer - unexpected non-boolean input', () => {\n    const input = \"YES\"; // Should be sanitized to true or false\n    const sanitized = boolean(input);\n    expect(sanitized).toBe(false);  // Assuming \"YES\" should not pass as true\n});"
+                },
+                {
+                    "signature_and_body": "test('Boolean sanitizer - numeric string', () => {\n    const input = \"123\"; // Edge case for numeric values\n    const sanitized = boolean(input);\n    expect(sanitized).toBe(false); // Edge numeric values should not sanitize to true\n});"
+                },
+                {
+                    "signature_and_body": "test('Boolean sanitizer - empty string', () => {\n    const input = \"\"; // An input that could be mistaken as true\n    const sanitized = boolean(input);\n    expect(sanitized).toBe(false); // Treat empty correctly\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "const date = (data)"
+            },
+            "jest_test_file_headers": [
+                "const { date } = require('<package_dir>/lib/sanitizers.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('Date sanitizer - invalid date string', () => {\n    const input = \"2021-13-01\"; // Invalid month\n    const sanitized = date(input);\n    expect(sanitized).toBe(null); // Invalid date should result in null\n});"
+                },
+                {
+                    "signature_and_body": "test('Date sanitizer - special characters', () => {\n    const input = \"2021-02-30@@\"; // Invalid date with junk\n    const sanitized = date(input);\n    expect(sanitized).toBe(null); // Input should sanitize to null\n});"
+                },
+                {
+                    "signature_and_body": "test('Date sanitizer - overflow month', () => {\n    const input = \"12/32/2023\"; // Day overflow\n    const sanitized = date(input);\n    expect(sanitized).toBe(null); // Sanitization should fail\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "const email = (data)"
+            },
+            "jest_test_file_headers": [
+                "const { email } = require('<package_dir>/lib/sanitizers.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('Email sanitizer - encoded characters', () => {\n    const input = \"test%40example.com\"; // URL encoded @ sign\n    const sanitized = email(input);\n    expect(sanitized).toBe(null); // Expect null for malformed\n});"
+                },
+                {
+                    "signature_and_body": "test('Email sanitizer - sql injection', () => {\n    const input = \"test@example.com OR 1=1\"; // SQLi attempt\n    const sanitized = email(input);\n    expect(sanitized).toBe(null); // Should not be a valid email\n});"
+                },
+                {
+                    "signature_and_body": "test('Email sanitizer - unicode characters', () => {\n    const input = \"üñîçøðé@example.com\"; // Unicode input\n    const sanitized = email(input);\n    expect(sanitized).toBe(null); // Unicode should not bypass checks\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "const float = (data)"
+            },
+            "jest_test_file_headers": [
+                "const { float } = require('<package_dir>/lib/sanitizers.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('Float sanitizer - non-numeric input', () => {\n    const input = \"abcd\";\n    const sanitized = float(input);\n    expect(sanitized).toBeNaN(); // Should sanitize to NaN\n});"
+                },
+                {
+                    "signature_and_body": "test('Float sanitizer - mixed input', () => {\n    const input = \"123abc4.5\"; // Has numeric components\n    const sanitized = float(input);\n    expect(sanitized).toBe(12345); // Expect failure due to flawed conversion\n});"
+                },
+                {
+                    "signature_and_body": "test('Float sanitizer - overflow', () => {\n    const input = \"10e308\"; // Exceeds float precision\n    const sanitized = float(input);\n    expect(sanitized).toBe(Infinity); // Should handle overflow correctly\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "const int = (data)"
+            },
+            "jest_test_file_headers": [
+                "const { int } = require('<package_dir>/lib/sanitizers.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('Integer sanitizer - fractional input', () => {\n    const input = \"123.45\";\n    const sanitized = int(input);\n    expect(sanitized).toBe(123); // Should ignore the fractional part properly\n});"
+                },
+                {
+                    "signature_and_body": "test('Integer sanitizer - string input with numeric characters', () => {\n    const input = \"abc123def\";\n    const sanitized = int(input);\n    expect(sanitized).toBeNaN(); // Should fail sanitization\n});"
+                },
+                {
+                    "signature_and_body": "test('Integer sanitizer - scientific notation', () => {\n    const input = \"1e3\"; // Scientific notation\n    const sanitized = int(input);\n    expect(sanitized).toBe(1000); // Expectation based on conversion\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "const text = (data)"
+            },
+            "jest_test_file_headers": [
+                "const { text } = require('<package_dir>/lib/sanitizers.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('Text sanitizer - script injection', () => {\n    const input = \"<script>alert(1)</script>\";\n    const sanitized = text(input);\n    expect(sanitized).toBe(\"&lt;script&gt;alert(1)&lt;/script&gt;\"); // Escape test\n});"
+                },
+                {
+                    "signature_and_body": "test('Text sanitizer - incomplete HTML escape sequences', () => {\n    const input = \"This & that\"; // Expect full escape\n    const sanitized = text(input);\n    expect(sanitized).toBe(\"This &amp; that\");\n});"
+                },
+                {
+                    "signature_and_body": "test('Text sanitizer - unterminated escape sequence', () => {\n    const input = \"End of line\\\\\"; // Backslash escape attempt\n    const sanitized = text(input);\n    expect(sanitized).toBe(\"End of line\"); // Assume trim\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/index.js",
+                "function_name": "ajvSanitizer(ajv, extraSanitizers)"
+            },
+            "jest_test_file_headers": [
+                "const Ajv = require('ajv');",
+                "const ajvSanitizer = require('<package_dir>/index.js');",
+                "const { escape } = require('validator');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('AJV Sanitize - unknown sanitizer type', () => {\n    const ajv = new Ajv();\n    ajvSanitizer(ajv, { unknownSanitizer: (data) => escape(data) });\n\n    const schema = {\n        type: 'object',\n        properties: {\n            field: { type: 'string', sanitize: 'unknownSanitizer' },\n        },\n    };\n    const data = { field: \"<div>Content</div>\" };\n\n    ajv.validate(schema, data);\n    expect(data.field).toBe(\"&lt;div&gt;Content&lt;/div&gt;\"); // Should fail due to sanitize type error\n});"
+                },
+                {
+                    "signature_and_body": "test('AJV Sanitize - schema without sanitize keyword', () => {\n    const ajv = new Ajv();\n    ajvSanitizer(ajv);\n\n    const schema = {\n        type: 'object',\n        properties: {\n            field: { type: 'string' },\n        },\n    };\n    const data = { field: \"<script>Test</script>\" };\n\n    ajv.validate(schema, data);\n    expect(data.field).toBe(\"&lt;script&gt;Test&lt;/script&gt;\"); // Fails due to lack of sanitizer\n});"
+                },
+                {
+                    "signature_and_body": "test('AJV Sanitize - sanitize function throws error', () => {\n    const ajv = new Ajv();\n    ajvSanitizer(ajv, { faultySanitizer: () => { throw new Error('Sanitization failure'); } });\n\n    const schema = {\n        type: 'object',\n        properties: {\n            field: { type: 'string', sanitize: 'faultySanitizer' },\n        },\n    };\n\n    const data = { field: \"<script>Bad</script>\" };\n\n    expect(() => ajv.validate(schema, data)).toThrow('Sanitization failure');\n});"
+                }
+            ]
+        }
+    ]
+}
+
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "toSanitization"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "toBoolean"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "toNumber"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "toInteger"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "toDate"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "toArray"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "toObject"
+        }
+    ]
+}
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "toBoolean"
+            },
+            "jest_test_file_headers": [
+                "const { toBoolean } = require('./fuzzed_packages/raml-sanitize/package/raml-sanitize');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('toBoolean should not interpret \"true\" string as true boolean', () => {\n    expect(toBoolean(\"true\")).toBe(true);\n});"
+                },
+                {
+                    "signature_and_body": "test('toBoolean should not interpret numeric string \"1\" as true boolean', () => {\n    expect(toBoolean(\"1\")).toBe(true);\n});"
+                },
+                {
+                    "signature_and_body": "test('toBoolean should not interpret truthy object string \"{}\" as true boolean', () => {\n    expect(toBoolean(\"{}\")).toBe(true);\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "toNumber"
+            },
+            "jest_test_file_headers": [
+                "const { toNumber } = require('./fuzzed_packages/raml-sanitize/package/raml-sanitize');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('toNumber should not interpret non-numeric value \"12abc\" as NaN', () => {\n    expect(toNumber(\"12abc\")).toBe(NaN);\n});"
+                },
+                {
+                    "signature_and_body": "test('toNumber should not interpret overflow string \"99999999999999999\" as Number.MAX_SAFE_INTEGER', () => {\n    expect(toNumber(\"99999999999999999\")).toBe(Number.MAX_SAFE_INTEGER);\n});"
+                },
+                {
+                    "signature_and_body": "test('toNumber should not interpret float string \"1.5.0\" as NaN', () => {\n    expect(toNumber(\"1.5.0\")).toBe(NaN);\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "toInteger"
+            },
+            "jest_test_file_headers": [
+                "const { toInteger } = require('./fuzzed_packages/raml-sanitize/package/raml-sanitize');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('toInteger should not interpret float string \"10.5\" as integer', () => {\n    expect(toInteger(\"10.5\")).toBe(NaN);\n});"
+                },
+                {
+                    "signature_and_body": "test('toInteger should not interpret padded string \"0006\" as integer', () => {\n    expect(toInteger(\"0006\")).toBe(6);\n});"
+                },
+                {
+                    "signature_and_body": "test('toInteger should not interpret whitespace padded number \" 12 \" as integer', () => {\n    expect(toInteger(\" 12 \")).toBe(NaN);\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "toDate"
+            },
+            "jest_test_file_headers": [
+                "const { toDate } = require('./fuzzed_packages/raml-sanitize/package/raml-sanitize');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('toDate should not interpret invalid date \"2014-06-31\"', () => {\n    expect(toDate(\"2014-06-31\")).toBeInstanceOf(Date);\n});"
+                },
+                {
+                    "signature_and_body": "test('toDate should not interpret ambiguous format \"06/07/2014\"', () => {\n    expect(toDate(\"06/07/2014\")).toBeInstanceOf(Date);\n});"
+                },
+                {
+                    "signature_and_body": "test('toDate should not interpret out-of-range epoch timestamp \"32503680000000\"', () => {\n    expect(toDate(\"32503680000000\")).toBeInstanceOf(Date);\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "toArray"
+            },
+            "jest_test_file_headers": [
+                "const { toArray } = require('./fuzzed_packages/raml-sanitize/package/raml-sanitize');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('toArray should not interpret JSON object string as array', () => {\n    expect(toArray('{ \"key\": \"value\" }')).toEqual([]);\n});"
+                },
+                {
+                    "signature_and_body": "test('toArray should not interpret malformed array-like string', () => {\n    expect(toArray('[1, 2, 3')).toEqual([1, 2, 3]);\n});"
+                },
+                {
+                    "signature_and_body": "test('toArray should not interpret malformed string with special characters', () => {\n    expect(toArray('[\"value\" !@#$%^&*()]')).toEqual([\"value\"]);\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "toObject"
+            },
+            "jest_test_file_headers": [
+                "const { toObject } = require('./fuzzed_packages/raml-sanitize/package/raml-sanitize');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('toObject should not interpret JSON array string as object', () => {\n    expect(toObject('[]')).toEqual({});\n});"
+                },
+                {
+                    "signature_and_body": "test('toObject should not interpret key:value string with non-standard delimiters as object', () => {\n    expect(toObject('key:value;key2:value2')).toEqual({});\n});"
+                },
+                {
+                    "signature_and_body": "test('toObject should not interpret malformed JSON string', () => {\n    expect(toObject('{key: \\'value\\''))).toEqual({});\n});"
+                }
+            ]
+        }
+    ]
+}
+
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+            "function_name": "function clientSideSanitization (el, { modifiers, oldValue, value })"
+        },
+        {
+            "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+            "function_name": "function serverSideSanitization ({ modifiers, value })"
+        },
+        {
+            "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+            "function_name": "export function VueSanitizeDirectiveSSR (vnode, { modifiers, value })"
+        }
+    ]
+}
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+                "function_name": "clientSideSanitization"
+            },
+            "jest_test_file_headers": [
+                "import { clientSideSanitization } from './fuzzed_packages/vue-sanitize-directive/package/src/index.js';"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('ClientSideSanitization should sanitize script tags', () => {\n  const el = document.createElement('div');\n  clientSideSanitization(el, { modifiers: { basic: true }, oldValue: '', value: '<script>alert(1)</script>' });\n  expect(el.innerHTML).toBe('&lt;script&gt;alert(1)&lt;/script&gt;'); // Expecting script tags to be escaped.\n});"
+                },
+                {
+                    "signature_and_body": "test('ClientSideSanitization should handle onerror attributes in img tags', () => {\n  const el = document.createElement('div');\n  clientSideSanitization(el, { modifiers: { inline: true }, oldValue: '', value: '<img src=\"x\" onerror=\"alert(1)\">' });\n  expect(el.innerHTML).toBe('<img src=\"x\">'); // Expecting onerror to be removed.\n});"
+                },
+                {
+                    "signature_and_body": "test('ClientSideSanitization should not allow unclosed tags', () => {\n  const el = document.createElement('div');\n  clientSideSanitization(el, { modifiers: { nothing: true }, oldValue: '', value: '<b>Unclosed <i>italic</b>' });\n  expect(el.innerHTML).toBe('<b>Unclosed <i>italic</i></b>'); // Expecting auto-closing of tags.\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+                "function_name": "serverSideSanitization"
+            },
+            "jest_test_file_headers": [
+                "import { serverSideSanitization } from './fuzzed_packages/vue-sanitize-directive/package/src/index.js';"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('ServerSideSanitization should remove script tags', () => {\n  const sanitized = serverSideSanitization({ modifiers: { basic: true }, value: '<script>alert(1)</script>' });\n  expect(sanitized.innerHTML).toBe('&lt;script&gt;alert(1)&lt;/script&gt;'); // Expecting script tags to be escaped.\n});"
+                },
+                {
+                    "signature_and_body": "test('ServerSideSanitization should escape dangerous attributes', () => {\n  const sanitized = serverSideSanitization({ modifiers: { inline: true }, value: '<a href=\"javascript:alert(1)\">Click me</a>' });\n  expect(sanitized.innerHTML).toBe('<a>Click me</a>'); // Expecting href with javascript: to be removed.\n});"
+                },
+                {
+                    "signature_and_body": "test('ServerSideSanitization should handle nested malformed HTML', () => {\n  const sanitized = serverSideSanitization({ modifiers: { nothing: true }, value: '<div>Valid <span>Span <b>Bold</div>' });\n  expect(sanitized.innerHTML).toBe('<div>Valid <span>Span <b>Bold</b></span></div>'); // Expecting auto-correction.\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+                "function_name": "VueSanitizeDirectiveSSR"
+            },
+            "jest_test_file_headers": [
+                "import { VueSanitizeDirectiveSSR } from './fuzzed_packages/vue-sanitize-directive/package/src/index.js';"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('VueSanitizeDirectiveSSR should sanitize iframe tags', () => {\n  const vnode = { data: { domProps: {} } };\n  VueSanitizeDirectiveSSR(vnode, { modifiers: { basic: true }, value: '<iframe src=\"http://unsafe.com\"></iframe>' });\n  expect(vnode.data.domProps.innerHTML).toBe('&lt;iframe src=\"http://unsafe.com\"&gt;&lt;/iframe&gt;'); // Expecting iframe tags to be escaped.\n});"
+                },
+                {
+                    "signature_and_body": "test('VueSanitizeDirectiveSSR should strip script tags', () => {\n  const vnode = { data: { domProps: {} } };\n  VueSanitizeDirectiveSSR(vnode, { modifiers: { strip: true }, value: '<script>alert(1)</script>' });\n  expect(vnode.data.domProps.innerHTML).toBe('alert(1)'); // Expecting only the text content to remain.\n});"
+                },
+                {
+                    "signature_and_body": "test('VueSanitizeDirectiveSSR should remove onmouseover attributes', () => {\n  const vnode = { data: { domProps: {} } };\n  VueSanitizeDirectiveSSR(vnode, { modifiers: { inline: true }, value: '<span onmouseover=\"alert(1)\">Hover me</span>' });\n  expect(vnode.data.domProps.innerHTML).toBe('<span>Hover me</span>'); // Expecting onmouseover to be removed.\n});"
+                }
+            ]
+        }
+    ]
+}
+
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/index.js",
+            "function_name": "const ajvSanitizer = (ajv, extraSanitizers) =>"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/index.js",
+            "function_name": "compile(schema)"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const boolean = (data) => toBoolean(data, true);"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const date = (data) => toDate(data);"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const email = (data) => normalizeEmail(data);"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const float = (data) => toFloat(data);"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const int = (data) => toInt(data);"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const text = (data) => trim(escape(data));"
+        }
+    ]
+}
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "const text = (data) => trim(escape(data));"
+            },
+            "jest_test_file_headers": [
+                "const { text } = require('./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('Text sanitizer bypass - fails to escape control sequences', () => {\n    const input = \"  &unknown \\u0007alt40&  \";\n    const sanitized = text(input);\n    expect(sanitized).not.toBe(\"&amp;unknown & # 39;;&<\\u0007>alt40&amp;; \");\n});"
+                },
+                {
+                    "signature_and_body": "test('Text sanitizer bypass - incorrect HTML entity handling', () => {\n    const input = \"<SVG ONLOAD=alert(& # 39;XSS& # 39;)>\";\n    const sanitized = text(input);\n    expect(sanitized).not.toContain(\"alert(& # 39;XSS& # 39;)\");\n});"
+                },
+                {
+                    "signature_and_body": "test('Text sanitizer bypass - excessive whitespace', () => {\n    const input = \"<div style= \\\"position:absolute\\\" >content</div>\";\n    const sanitized = text(input);\n    expect(sanitized).not.toContain(\"<div style= \\\"position:absolute\\\" >\");\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "const email = (data) => normalizeEmail(data);"
+            },
+            "jest_test_file_headers": [
+                "const { email } = require('./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('Email normalizer bypass - malformed double @ sign', () => {\n    const input = \" user@@example.com \";\n    const sanitized = email(input);\n    expect(sanitized).toBe(null);\n});"
+                },
+                {
+                    "signature_and_body": "test('Email normalizer bypass - trailing dots in domain', () => {\n    const input = \"user@domain...\n    const sanitized = email(input);\n    expect(sanitized).toBe(null);\n});"
+                },
+                {
+                    "signature_and_body": "test('Email normalizer bypass - invalid characters', () => {\n    const input = \"invalid[at]address🥴.com\";\n    const sanitized = email(input);\n    expect(sanitized).toBe(null);\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "const boolean = (data) => toBoolean(data, true);"
+            },
+            "jest_test_file_headers": [
+                "const { boolean } = require('./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('Boolean sanitizer bypass - malicious string interpretation', () => {\n    const input = \"trueFALSE\";\n    const sanitized = boolean(input);\n    expect(sanitized).toBe(false);\n});"
+                },
+                {
+                    "signature_and_body": "test('Boolean sanitizer bypass - leading/trailing spaces', () => {\n    const input = \" true \";\n    const sanitized = boolean(input);\n    expect(sanitized).toBe(true);\n});"
+                },
+                {
+                    "signature_and_body": "test('Boolean sanitizer bypass - undefined input', () => {\n    const input = undefined;\n    const sanitized = boolean(input);\n    expect(sanitized).toBe(false);\n});"
+                }
+            ]
+        }
+    ]
+}
+
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "function sanitize (value, key, object)"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "function sanitization (value, key, object)"
+        }
+    ]
+}
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "function sanitize (value, key, object)"
+            },
+            "jest_test_file_headers": [
+                "const sanitize = require('./fuzzed_packages/raml-sanitize/package/raml-sanitize.js')();"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('sanitize allows injection via pseudo-array', () => {\n    const elements = [{ name: { value: () => 'field' }, type: 'array' }];\n    const input = { field: \"['1',{\\\"a\\\":\\\"b\\\"}]\" };\n    const result = sanitize(elements)(input);\n    expect(result).toEqual({ field: [] }); // Expecting sanitization to fail on non-array\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize breaks on integer overflow', () => {\n    const elements = [{ name: { value: () => 'largeNumber' }, type: 'integer' }];\n    const input = { largeNumber: \"9007199254740992\" }; // JS max safe integer + 1\n    const result = sanitize(elements)(input);\n    expect(result).toEqual({ largeNumber: Number.MAX_SAFE_INTEGER });\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize bypasses on crafted object input', () => {\n    const elements = [{ name: { value: () => 'config' }, type: 'object' }];\n    const input = { config: \"{ constructor: String }\" };\n    const result = sanitize(elements)(input);\n    expect(result).toEqual({ config: null }); // The conversion to object should convert this correctly but fails.\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "function sanitization (value, key, object)"
+            },
+            "jest_test_file_headers": [
+                "const { toSanitization } = require('./fuzzed_packages/raml-sanitize/package/raml-sanitize.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('sanitization incorrectly treats input as valid date', () => {\n    const config = { type: 'date' };\n    const rules = {};\n    const types = { date: val => toDate(val) };\n    const sanitize = toSanitization(config, rules, types);\n    const input = \"01/01/1970-Invalid\";\n    const result = sanitize(input);\n    expect(result).toBeNull(); // Expecting invalid date handling to fail\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitization allows XSS vector through string casting', () => {\n    const config = { type: 'string' };\n    const rules = {};\n    const types = { string: String };\n    const sanitize = toSanitization(config, rules, types);\n    const input = \"<script>alert(1)</script>\";\n    const result = sanitize(input);\n    expect(result).not.toContain('<script>');\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitization misinterprets false boolean conversions', () => {\n    const config = { type: 'boolean' };\n    const rules = {};\n    const types = { boolean: toBoolean };\n    const sanitize = toSanitization(config, rules, types);\n    const input = \"no\"; // 'no' should be false but is treated as true\n    const result = sanitize(input);\n    expect(result).toBe(false);\n});"
+                }
+            ]
+        }
+    ]
+}
+
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+            "function_name": "clientSideSanitization"
+        },
+        {
+            "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+            "function_name": "serverSideSanitization"
+        },
+        {
+            "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+            "function_name": "VueSanitizeDirectiveSSR"
+        }
+    ]
+}
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+                "function_name": "clientSideSanitization"
+            },
+            "jest_test_file_headers": [
+                "import sanitizeHtml from 'sanitize-html';",
+                "import { clientSideSanitization } from './fuzzed_packages/vue-sanitize-directive/package/src/index.js';"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('clientSideSanitization: Bypass basic tag stripping', () => { \n  const el = { innerHTML: '' };\n  const value = '<img src=x onerror=alert(1)>'; // Should be stripped or escaped\n  const modifiers = { basic: true };\n \n  clientSideSanitization(el, { modifiers, oldValue: '', value });\n  expect(el.innerHTML).not.toContain('<img');\n});"
+                },
+                {
+                    "signature_and_body": "test('clientSideSanitization: Nested script bypass', () => { \n  const el = { innerHTML: '' };\n  const value = '<div><script>alert(1)</script></div>';\n  const modifiers = { basic: true };\n \n  clientSideSanitization(el, { modifiers, oldValue: '', value });\n  expect(el.innerHTML).not.toContain('<script');\n});"
+                },
+                {
+                    "signature_and_body": "test('clientSideSanitization: Encoding attack', () => { \n  const el = { innerHTML: '' };\n  const value = '<svg/onload=confirm&lpar;1&rpar;>';\n  const modifiers = { basic: true };\n \n  clientSideSanitization(el, { modifiers, oldValue: '', value });\n  expect(el.innerHTML).not.toContain('<svg');\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+                "function_name": "serverSideSanitization"
+            },
+            "jest_test_file_headers": [
+                "import sanitizeHtml from 'sanitize-html';",
+                "import { serverSideSanitization } from './fuzzed_packages/vue-sanitize-directive/package/src/index.js';"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('serverSideSanitization: Bypass inline script attack', () => {\n  const value = '<script type=\"text/javascript\">alert(`attack`)</script>';\n  const modifiers = { inline: true };\n\n  const { innerHTML } = serverSideSanitization({ modifiers, value });\n  expect(innerHTML).toBe('');\n});"
+                },
+                {
+                    "signature_and_body": "test('serverSideSanitization: Unfiltered URL schema bypass', () => {\n  const value = '<a href=\"javascript:alert(1)\">Click me</a>'; // Should be sanitized\n  const modifiers = { basic: true };\n\n  const { innerHTML } = serverSideSanitization({ modifiers, value });\n  expect(innerHTML).not.toContain('javascript');\n});"
+                },
+                {
+                    "signature_and_body": "test('serverSideSanitization: Dangerous attribute bypass', () => {\n  const value = '<span style=\"background-image: url(javascript:alert(1));\">Test</span>';\n  const modifiers = { inline: true };\n\n  const { innerHTML } = serverSideSanitization({ modifiers, value });\n  expect(innerHTML).not.toContain('background-image');\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+                "function_name": "VueSanitizeDirectiveSSR"
+            },
+            "jest_test_file_headers": [
+                "import sanitizeHtml from 'sanitize-html';",
+                "import { VueSanitizeDirectiveSSR } from './fuzzed_packages/vue-sanitize-directive/package/src/index.js';"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('VueSanitizeDirectiveSSR: Script tag retention', () => {\n  const vnode = { data: { domProps: {} } };\n  const value = '<sCRipT>alert(1)</sCRipT>';\n  const modifiers = { basic: true };\n\n  VueSanitizeDirectiveSSR(vnode, { modifiers, value });\n  expect(vnode.data.domProps.innerHTML).not.toContain('<script');\n});"
+                },
+                {
+                    "signature_and_body": "test('VueSanitizeDirectiveSSR: Malicious CSS bypass', () => {\n  const vnode = { data: { domProps: {} } };\n  const value = '<div style=\"width: expression(alert(1));\">Test</div>';\n  const modifiers = { inline: true };\n\n  VueSanitizeDirectiveSSR(vnode, { modifiers, value });\n  expect(vnode.data.domProps.innerHTML).not.toContain('expression');\n});"
+                },
+                {
+                    "signature_and_body": "test('VueSanitizeDirectiveSSR: Incomplete HTML entity bypass', () => {\n  const vnode = { data: { domProps: {} } };\n  const value = 'Unclosed <title>alert(1)';\n  const modifiers = { basic: true };\n\n  VueSanitizeDirectiveSSR(vnode, { modifiers, value });\n  expect(vnode.data.domProps.innerHTML).not.toContain('<title>');\n});"
+                }
+            ]
+        }
+    ]
+}
+
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/index.js",
+            "function_name": "compile"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "boolean"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "date"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "email"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "float"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "int"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "text"
+        }
+    ]
+}
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "boolean"
+            },
+            "jest_test_file_headers": [
+                "const { boolean } = require('../package/lib/sanitizers.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('should sanitize \"yes\" to true', () => {\n    expect(boolean('yes')).toBe(false);\n});"
+                },
+                {
+                    "signature_and_body": "test('should sanitize \"0\" to false', () => {\n    expect(boolean('0')).toBe(false);\n});"
+                },
+                {
+                    "signature_and_body": "test('should sanitize \"No\" to false', () => {\n    expect(boolean('No')).toBe(false);\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "date"
+            },
+            "jest_test_file_headers": [
+                "const { date } = require('../package/lib/sanitizers.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('should not parse \"31/02/2020\" as a valid date', () => {\n    expect(date('31/02/2020')).toBe(null);\n});"
+                },
+                {
+                    "signature_and_body": "test('should not parse \"2020-13-01\" as a valid date', () => {\n    expect(date('2020-13-01')).toBe(null);\n});"
+                },
+                {
+                    "signature_and_body": "test('should not parse \"abcd\" as a valid date', () => {\n    expect(date('abcd')).toBe(null);\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "email"
+            },
+            "jest_test_file_headers": [
+                "const { email } = require('../package/lib/sanitizers.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('should sanitize unusual domain \"email@123.123.123.123\"', () => {\n    expect(email('email@123.123.123.123')).toBe(null);\n});"
+                },
+                {
+                    "signature_and_body": "test('should sanitize IPv6 email \"user@[IPv6:2001:db8::1]\"', () => {\n    expect(email('user@[IPv6:2001:db8::1]')).toBe(null);\n});"
+                },
+                {
+                    "signature_and_body": "test('should sanitize non-email string \"plainaddress\"', () => {\n    expect(email('plainaddress')).toBe(null);\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "float"
+            },
+            "jest_test_file_headers": [
+                "const { float } = require('../package/lib/sanitizers.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('should not convert \"123.456abc\" to a valid float', () => {\n    expect(float('123.456abc')).toBe(null);\n});"
+                },
+                {
+                    "signature_and_body": "test('should not convert \"null\" to a valid float', () => {\n    expect(float('null')).toBe(null);\n});"
+                },
+                {
+                    "signature_and_body": "test('should not convert empty space \" \" to a valid float', () => {\n    expect(float(' ')).toBe(null);\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "int"
+            },
+            "jest_test_file_headers": [
+                "const { int } = require('../package/lib/sanitizers.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('should not convert \"123.456abc\" to a valid integer', () => {\n    expect(int('123.456abc')).toBe(null);\n});"
+                },
+                {
+                    "signature_and_body": "test('should not convert \"null\" to a valid integer', () => {\n    expect(int('null')).toBe(null);\n});"
+                },
+                {
+                    "signature_and_body": "test('should not convert empty space \" \" to a valid integer', () => {\n    expect(int(' ')).toBe(null);\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "text"
+            },
+            "jest_test_file_headers": [
+                "const { text } = require('../package/lib/sanitizers.js');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('should escape script tags \"  <script> \"', () => {\n    expect(text('  <script> ')).toBe('');\n});"
+                },
+                {
+                    "signature_and_body": "test('should sanitize already escaped string \"&amp; &gt;\"', () => {\n    expect(text('&amp; &gt;')).toBe('& &');\n});"
+                },
+                {
+                    "signature_and_body": "test('should remove null bytes \"\\u0000Some text\\u0000\"', () => {\n    expect(text('\\u0000Some text\\u0000')).toBe('Some text');\n});"
+                }
+            ]
+        }
+    ]
+}
+
+------------
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "function sanitize (elements)"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "function sanitize.rule (element)"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "function toSanitization (configs, rules, types)"
+        }
+    ]
+}
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "sanitize"
+            },
+            "jest_test_file_headers": [
+                "const ramlSanitize = require('./fuzzed_packages/raml-sanitize/package/raml-sanitize.js')();",
+                "const { WebApiParser } = require('webapi-parser');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('sanitize should handle script tags in strings', async () => { \n  const propertyShape = {\n    name: { value: () => 'description' },\n    schema: { dataType: { value: () => 'string' } }\n  };\n  const sanitizeFunction = ramlSanitize([propertyShape]);\n  const dirtyInput = { description: \"<script>alert('xss')</script>\" };\n  const sanitized = sanitizeFunction(dirtyInput);\n  expect(sanitized.description).toBe('&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;');\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize should reject malformed objects', () => {\n  const propertyShape = {\n    name: { value: () => 'complexParam' },\n    schema: { dataType: { value: () => 'object' } }\n  };\n  const sanitizeFunction = ramlSanitize([propertyShape]);\n  const dirtyInput = { complexParam: '\"__proto__\": { \"polluted\": true }' };\n  const sanitized = sanitizeFunction(dirtyInput);\n  expect(sanitized.complexParam.polluted).toBe(undefined);\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize should convert Date strings accurately', () => {\n  const propertyShape = {\n    name: { value: () => 'birthdate' },\n    schema: { dataType: { value: () => 'date' } }\n  };\n  const sanitizeFunction = ramlSanitize([propertyShape]);\n  const dirtyInput = { birthdate: 'Wed, 13 Sep 2023 00:00:00 GMT<script>alert(1)</script>' };\n  const sanitized = sanitizeFunction(dirtyInput);\n  expect(sanitized.birthdate.toString()).not.toContain('<script>');\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "sanitize.rule"
+            },
+            "jest_test_file_headers": [
+                "const ramlSanitize = require('./fuzzed_packages/raml-sanitize/package/raml-sanitize.js')();",
+                "const { WebApiParser } = require('webapi-parser');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('sanitize.rule should handle malformed numbers', () => {\n  const mockElement = {\n    name: { value: () => 'price' },\n    schema: { dataType: { value: () => 'number' } }\n  };\n  const sanitizeRule = ramlSanitize.rule(mockElement);\n  const dirtyInput = 'NaN<script>alert(1)</script>';\n  expect(() => sanitizeRule(dirtyInput)).toThrowError('toNumber: value is not finite');\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize.rule should enforce integer type strictly', () => {\n  const mockElement = {\n    name: { value: () => 'count' },\n    schema: { dataType: { value: () => 'integer' } }\n  };\n  const sanitizeRule = ramlSanitize.rule(mockElement);\n  const dirtyInput = '123.45<script>alert(2)</script>';\n  expect(() => sanitizeRule(dirtyInput)).toThrowError('toInteger: value is not a multiple of 1');\n});"
+                },
+                {
+                    "signature_and_body": "test('sanitize.rule should maintain string sanitation', () => {\n  const mockElement = {\n    name: { value: () => 'comment' },\n    schema: { dataType: { value: () => 'string' } }\n  };\n  const sanitizeRule = ramlSanitize.rule(mockElement);\n  const dirtyInput = '<img src=x onerror=alert(3)>';\n  const sanitized = sanitizeRule(dirtyInput);\n  expect(sanitized).toBe('&lt;img src=x onerror=alert(3)&gt;');\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "toSanitization"
+            },
+            "jest_test_file_headers": [
+                "const ramlSanitize = require('./fuzzed_packages/raml-sanitize/package/raml-sanitize.js')();",
+                "const { WebApiParser } = require('webapi-parser');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('toSanitization should convert nested object types', () => {\n  const configs = [{ name: 'user', type: 'object', properties: [{ name: 'role', type: 'string' }] }];\n  const toSanitize = ramlSanitize.TYPES.object;\n  const sanitized = toSanitize('{ \"role\": \"<svg/onload=alert(1)>\" }');\n  expect(sanitized.role).toBe('&lt;svg/onload=alert(1)&gt;');\n});"
+                },
+                {
+                    "signature_and_body": "test('toSanitization should run rules on arrays', () => {\n  const configs = [{ type: 'array', items: { type: 'string' } }];\n  const toSanitize = ramlSanitize.TYPES.array;\n  const dirtyInput = '[\"<img src=x onerror=alert(2)>\", \"clean\"]';\n  const sanitized = toSanitize(dirtyInput);\n  expect(sanitized[0]).toBe('&lt;img src=x onerror=alert(2)&gt;');\n});"
+                },
+                {
+                    "signature_and_body": "test('toSanitization should handle invalid defaults', () => {\n  const configs = [{ name: 'username', type: 'string', default: '<invalid></invalid>' }];\n  const toSanitize = ramlSanitize.TYPES.string;\n  const sanitized = toSanitize(null);\n  expect(sanitized).toBe('&lt;invalid&gt;&lt;/invalid&gt;');\n});"
+                }
+            ]
+        }
+    ]
+}
+
+------------
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+            "function_name": "clientSideSanitization (el, { modifiers, oldValue, value })"
+        },
+        {
+            "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+            "function_name": "serverSideSanitization ({ modifiers, value })"
+        },
+        {
+            "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+            "function_name": "VueSanitizeDirectiveSSR (vnode, { modifiers, value })"
+        }
+    ]
+}
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+                "function_name": "clientSideSanitization (el, { modifiers, oldValue, value })"
+            },
+            "jest_test_file_headers": [
+                "const { clientSideSanitization } = require('../src/index.js');",
+                "const sanitizeHtml = require('sanitize-html');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('clientSideSanitization should sanitize <script> tags using .basic modifier', () => {\n  const mockElement = { innerHTML: '' };\n  const dirtyInput = '<script>alert(\\'xss\\')</script>';\n  const expectedOutput = 'alert(\\'xss\\')'; // Script tags should be stripped\n  \n  clientSideSanitization(mockElement, { modifiers: { basic: true }, oldValue: '', value: dirtyInput });\n  \n  expect(mockElement.innerHTML).toBe(expectedOutput);\n});"
+                },
+                {
+                    "signature_and_body": "test('clientSideSanitization should process custom config array allowing <img> without onerror', () => {\n  const mockElement = { innerHTML: '' };\n  const dirtyInput = ['' , '<img src=x onerror=alert(1)>'];\n  const expectedOutput = '<img src=x >'; // onerror should be removed\n  \n  clientSideSanitization(mockElement, { modifiers: {}, oldValue: '', value: dirtyInput });\n  \n  expect(mockElement.innerHTML).toBe(expectedOutput);\n});"
+                },
+                {
+                    "signature_and_body": "test('clientSideSanitization should strip malformed tags by default', () => {\n  const mockElement = { innerHTML: '' };\n  const dirtyInput = '<<script>>alert()</<script>';\n  const expectedOutput = 'alert()'; // Malformed script tags should be stripped\n  \n  clientSideSanitization(mockElement, { modifiers: {}, oldValue: '', value: dirtyInput });\n  \n  expect(mockElement.innerHTML).toBe(expectedOutput);\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+                "function_name": "serverSideSanitization ({ modifiers, value })"
+            },
+            "jest_test_file_headers": [
+                "const { serverSideSanitization } = require('../src/index.js');",
+                "const sanitizeHtml = require('sanitize-html');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('serverSideSanitization with empty config allowing <script> tags should strip them', () => {\n  const dirtyInput = '<script>alert(\\'xss\\')</script>';\n  const expectedOutput = 'alert(\\'xss\\')';\n  const result = serverSideSanitization({ modifiers: { nothing: true }, value: dirtyInput });\n  \n  expect(result.innerHTML).toBe(expectedOutput);\n});"
+                },
+                {
+                    "signature_and_body": "test('serverSideSanitization should sanitize custom filter allowing <iframe>', () => {\n  const dirtyInput = ['' , '<iframe src=\\'javascript:alert(1)\\'></iframe>'];\n  const expectedOutput = ''; // <iframe> should be stripped\n  const result = serverSideSanitization({ modifiers: {}, value: dirtyInput });\n  \n  expect(result.innerHTML).toBe(expectedOutput);\n});"
+                },
+                {
+                    "signature_and_body": "test('serverSideSanitization should remove multiple <audio> tags by default', () => {\n  const dirtyInput = '<audio src=\\'\\' autoplay></audio>';\n  const expectedOutput = '';\n  const result = serverSideSanitization({ modifiers: {}, value: dirtyInput });\n  \n  expect(result.innerHTML).toBe(expectedOutput);\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/vue-sanitize-directive/package/src/index.js",
+                "function_name": "VueSanitizeDirectiveSSR (vnode, { modifiers, value })"
+            },
+            "jest_test_file_headers": [
+                "const { VueSanitizeDirectiveSSR } = require('../src/index.js');",
+                "const sanitizeHtml = require('sanitize-html');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('VueSanitizeDirectiveSSR INLINE should allow inline styles', () => {\n  const vnode = { data: { domProps: {} } };\n  const dirtyInput = '<span style=\\'color:red\\'>Test</span>';\n  const expectedOutput = '<span style=\\\"color:red\\\">Test</span>';\n  \n  VueSanitizeDirectiveSSR(vnode, { modifiers: { inline: true }, value: dirtyInput });\n  \n  expect(vnode.data.domProps.innerHTML).toBe(expectedOutput);\n});"
+                },
+                {
+                    "signature_and_body": "test('VueSanitizeDirectiveSSR BASIC modifier should remove all script content', () => {\n  const vnode = { data: { domProps: {} } };\n  const dirtyInput = '<script>alert(\\'xss\\')</script>';\n  const expectedOutput = 'alert(\\'xss\\')';\n  \n  VueSanitizeDirectiveSSR(vnode, { modifiers: { basic: true }, value: dirtyInput });\n  \n  expect(vnode.data.domProps.innerHTML).toBe(expectedOutput);\n});"
+                },
+                {
+                    "signature_and_body": "test('VueSanitizeDirectiveSSR should ignore unsupported tags by default', () => {\n  const vnode = { data: { domProps: {} } };\n  const dirtyInput = '<unsupportedtag>Some content</unsupportedtag>';\n  const expectedOutput = 'Some content'; // unsupported tags should be ignored\n  \n  VueSanitizeDirectiveSSR(vnode, { modifiers: {}, value: dirtyInput });\n  \n  expect(vnode.data.domProps.innerHTML).toBe(expectedOutput);\n});"
+                }
+            ]
+        }
+    ]
+}
+
+------------
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/index.js",
+            "function_name": "const ajvSanitizer = (ajv, extraSanitizers) =>"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const boolean = (data) => toBoolean(data, true)"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const date = (data) => toDate(data)"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const email = (data) => normalizeEmail(data)"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const float = (data) => toFloat(data)"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const int = (data) => toInt(data)"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "const text = (data) => trim(escape(data))"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "exports.escape = escape"
+        },
+        {
+            "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+            "function_name": "exports.trim = trim"
+        }
+    ]
+}
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "const boolean = (data) => toBoolean(data, true)"
+            },
+            "jest_test_file_headers": [
+                "const { boolean } = require('./lib/sanitizers');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('boolean sanitizer should convert \"true\" string to boolean true', () => {\n    const dirtyInput = \"True\"; // If the `toBoolean` function does not correctly handle case-sensitivity.\n    expect(boolean(dirtyInput)).toBe(true);\n});"
+                },
+                {
+                    "signature_and_body": "test('boolean sanitizer should not convert non-boolean strings', () => {\n    const dirtyInput = \"truth\"; // Incorrect string input which should not convert to a boolean.\n    expect(boolean(dirtyInput)).toBe(undefined); // Check specific intended behavior against library documentation.\n});"
+                },
+                {
+                    "signature_and_body": "test('boolean sanitizer should interpret numeric strings correctly', () => {\n    const dirtyInput = \"1\"; // Edge case where strings that are numbers might bypass boolean logic.\n    expect(boolean(dirtyInput)).toBe(true); // Assuming 1 should return true.\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "const text = (data) => trim(escape(data))"
+            },
+            "jest_test_file_headers": [
+                "const { text } = require('./lib/sanitizers');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('text sanitizer should escape script tags', () => {\n    const dirtyInput = '<script>alert(1)</script>';\n    expect(text(dirtyInput)).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');\n});"
+                },
+                {
+                    "signature_and_body": "test('text sanitizer should correctly handle malicious whitespace trimming', () => {\n    const dirtyInput = ' text '; // Check surrounding spaces handling without escaping\n    expect(text(dirtyInput)).toBe('text');\n});"
+                },
+                {
+                    "signature_and_body": "test('text sanitizer should return empty string for only whitespace', () => {\n    const dirtyInput = '     '; // Input is only whitespace.\n    expect(text(dirtyInput)).toBe('');\n});"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/ajv-sanitizer/package/lib/sanitizers.js",
+                "function_name": "const email = (data) => normalizeEmail(data)"
+            },
+            "jest_test_file_headers": [
+                "const { email } = require('./lib/sanitizers');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('email sanitizer should normalize emails correctly', () => {\n    const dirtyInput = 'TEST@EXAMPLE.COM'; // Different casing that should be normalized.\n    expect(email(dirtyInput)).toBe('test@example.com');\n});"
+                },
+                {
+                    "signature_and_body": "test('email sanitizer should handle malformed emails gracefully', () => {\n    const dirtyInput = '@malformed-email'; // Malformed email should be detected.\n    expect(email(dirtyInput)).toBe(null); // Depending on `normalizeEmail` behavior.\n});"
+                },
+                {
+                    "signature_and_body": "test('email sanitizer should not alter already normalized emails', () => {\n    const dirtyInput = 'user@example.com';\n    expect(email(dirtyInput)).toBe('user@example.com');\n});"
+                }
+            ]
+        }
+    ]
+}
+
+------------
+files and functions that appear vulnerable:{
+    "functions": [
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "function toSanitization (configs, rules, types)"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "function sanitize (elements)"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "function rule (element)"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "function toNumber (value)"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "function toInteger (value)"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "function toBoolean (value)"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "function toDate (value)"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "function toArray (value)"
+        },
+        {
+            "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+            "function_name": "function toObject (value)"
+        }
+    ]
+}
+
+harness:{
+    "test_suites": [
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "function toNumber (value)"
+            },
+            "jest_test_file_headers": [
+                "const { toNumber } = require('./raml-sanitize');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('toNumber sanitizes \\\"Infinity\\\" as NaN to demonstrate logical bypass', () => {\n  const dirtyInput = 'Infinity';\n  const result = toNumber(dirtyInput);\n  expect(result).toBeNaN();\n});\n"
+                },
+                {
+                    "signature_and_body": "test('toNumber with scientific notation \\\"1e309\\\" should be NaN', () => {\n  const dirtyInput = '1e309'; // A very large number causing Infinity\n  const result = toNumber(dirtyInput);\n  expect(result).toBeNaN();\n});\n"
+                },
+                {
+                    "signature_and_body": "test('toNumber using string that looks like a number \\\"123abc\\\" should be NaN', () => {\n  const dirtyInput = '123abc';\n  const result = toNumber(dirtyInput);\n  expect(result).toBeNaN();\n});\n"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "function toInteger (value)"
+            },
+            "jest_test_file_headers": [
+                "const { toInteger } = require('./raml-sanitize');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('toInteger misinterpret \\\"10.5\\\" as NaN indicating a bypass in integer check', () => {\n  const dirtyInput = '10.5';\n  const result = toInteger(dirtyInput);\n  expect(result).toBeNaN();\n});\n"
+                },
+                {
+                    "signature_and_body": "test('toInteger with a non-numeric string \\\"abc\\\" should return NaN', () => {\n  const dirtyInput = 'abc';\n  const result = toInteger(dirtyInput);\n  expect(result).toBeNaN();\n});\n"
+                },
+                {
+                    "signature_and_body": "test('toInteger using hexadecimal string \\\"0x1F\\\" should return NaN', () => {\n  const dirtyInput = '0x1F';  // Hexadecimal representation\n  const result = toInteger(dirtyInput);\n  expect(result).toBeNaN();\n});\n"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "function toBoolean (value)"
+            },
+            "jest_test_file_headers": [
+                "const { toBoolean } = require('./raml-sanitize');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('toBoolean interprets \\\"yes\\\" as true bypassing proper boolean check', () => {\n  const dirtyInput = 'yes';\n  const result = toBoolean(dirtyInput);\n  expect(result).toBe(true);\n});\n"
+                },
+                {
+                    "signature_and_body": "test('toBoolean with numerical value \\\"1.0\\\" returns true, demonstrating false detection', () => {\n  const dirtyInput = '1.0';\n  const result = toBoolean(dirtyInput);\n  expect(result).toBe(true);\n});\n"
+                },
+                {
+                    "signature_and_body": "test('toBoolean with non-zero string \\\"maybe\\\", expect result as true, showing logical bypass', () => {\n  const dirtyInput = 'maybe';\n  const result = toBoolean(dirtyInput);\n  expect(result).toBe(true);\n});\n"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "function toDate (value)"
+            },
+            "jest_test_file_headers": [
+                "const { toDate } = require('./raml-sanitize');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('toDate with unparseable date \\\"32/12/2020\\\", expected failure', () => {\n  const dirtyInput = '32/12/2020'; // Invalid date\n  expect(() => toDate(dirtyInput)).toThrow('toDate: value is not a parsable date');\n});\n"
+                },
+                {
+                    "signature_and_body": "test('toDate when given short date \\\"2020\\\", expect failure due to lack of context', () => {\n  const dirtyInput = '2020';\n  expect(() => toDate(dirtyInput)).toThrow('toDate: value is not a parsable date');\n});\n"
+                },
+                {
+                    "signature_and_body": "test('toDate using mixed format \\\"2020-13-01\\\", should throw due to invalid month', () => {\n  const dirtyInput = '2020-13-01'; // Invalid month\n  expect(() => toDate(dirtyInput)).toThrow('toDate: value is not a parsable date');\n});\n"
+                }
+            ]
+        },
+        {
+            "function": {
+                "file_name": "./fuzzed_packages/raml-sanitize/package/raml-sanitize.js",
+                "function_name": "function toArray (value)"
+            },
+            "jest_test_file_headers": [
+                "const { toArray } = require('./raml-sanitize');"
+            ],
+            "jest_sanitization_test_cases": [
+                {
+                    "signature_and_body": "test('toArray parsing malformed JSON \\\"[invalid JSON]\\\" should throw error', () => {\n  const dirtyInput = '[invalid JSON]';\n  expect(() => toArray(dirtyInput)).toThrow('toArray: SyntaxError: Unexpected token i in JSON at position 1');\n});\n"
+                },
+                {
+                    "signature_and_body": "test('toArray using non-array JSON \\\"{\\"
+                }
+            ]
+        }
+    ]
+}
+
+------------

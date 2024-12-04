@@ -1,0 +1,44 @@
+{
+  "name": "vue-sanitize-directive",
+  "version": "0.2.1",
+  "description": "Vue directive for HTML sanitization.",
+  "author": {
+    "name": "Leonardo Piccioni de Almeida",
+    "email": "leopiccionia@gmail.com"
+  },
+  "keywords": [
+    "vue",
+    "sanitization",
+    "sanitize",
+    "v-sanitize"
+  ],
+  "main": "dist/vue-sanitize-directive.umd.js",
+  "module": "dist/vue-sanitize-directive.esm.js",
+  "exports": {
+    ".": {
+      "import": "./dist/vue-sanitize-directive.esm.js",
+      "require": "./dist/vue-sanitize-directive.umd.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "sanitize-html": "^2.7.1"
+  },
+  "devDependencies": {
+    "vite": "^3.0.4"
+  },
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leopiccionia/vue-sanitize-directive.git"
+  },
+  "bugs": {
+    "url": "https://github.com/leopiccionia/vue-sanitize-directive/issues"
+  },
+  "homepage": "https://leopiccionia.github.io/vue-sanitize-directive"
+}
