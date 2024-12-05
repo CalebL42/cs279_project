@@ -1,4 +1,4 @@
-##Usage:
+## Usage
 simply run:
 ```
 python3 automator.py
